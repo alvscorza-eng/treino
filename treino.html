@@ -89,6 +89,8 @@
       color: var(--text);
       font-size: 1rem;
       min-height: 44px;
+      -webkit-appearance: none;
+      appearance: none;
     }
 
     button {
@@ -258,9 +260,9 @@
 
       <div class="timer-inputs">
         <label for="minutesInput" class="sr-only">Minutos</label>
-        <input id="minutesInput" type="number" min="0" max="59" value="1" title="Minutos" aria-label="Minutos" inputmode="numeric" placeholder="Min" />
+        <input id="minutesInput" type="text" inputmode="numeric" value="1" title="Minutos" aria-label="Minutos" placeholder="Min" />
         <label for="secondsInput" class="sr-only">Segundos</label>
-        <input id="secondsInput" type="number" min="0" max="59" value="30" title="Segundos" aria-label="Segundos" inputmode="numeric" placeholder="Seg" />
+        <input id="secondsInput" type="text" inputmode="numeric" value="30" title="Segundos" aria-label="Segundos" placeholder="Seg" />
       </div>
 
       <div class="actions">
@@ -622,21 +624,25 @@
     }
 
     setTimerBtn.addEventListener('click', () => {
-      const parsedMinutes = Number(minutesInputEl.value);
-      const parsedSeconds = Number(secondsInputEl.value);
+      const minuteStr = (minutesInputEl.value || '0').trim();
+      const secondStr = (secondsInputEl.value || '0').trim();
+      
+      const parsedMinutes = parseInt(minuteStr, 10);
+      const parsedSeconds = parseInt(secondStr, 10);
 
-      const minutes = Number.isFinite(parsedMinutes)
+      const minutes = !isNaN(parsedMinutes)
         ? Math.max(0, Math.min(59, parsedMinutes))
         : 0;
-      const seconds = Number.isFinite(parsedSeconds)
+      const seconds = !isNaN(parsedSeconds)
         ? Math.max(0, Math.min(59, parsedSeconds))
         : 0;
 
       totalSeconds = minutes * 60 + seconds;
+      if (totalSeconds === 0) totalSeconds = 60;
       remainingSeconds = totalSeconds;
       stopTimer();
       updateTimerDisplay();
-    });
+    })
 
     startPauseBtn.addEventListener('click', () => {
       if (timerId) {
