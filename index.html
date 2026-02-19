@@ -219,12 +219,107 @@
       border: 0;
     }
 
+    .calendar-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .calendar-weekday {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 0;
+    }
+
+    .calendar-day {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-height: 46px;
+      background: #0b1220;
+      color: var(--text);
+      font-weight: 600;
+      display: grid;
+      place-items: center;
+      position: relative;
+      padding: 4px;
+    }
+
+    .calendar-day.empty {
+      background: transparent;
+      border-style: dashed;
+      opacity: 0.35;
+    }
+
+    .calendar-day.trained {
+      border-color: var(--accent);
+      background: #123120;
+      color: #dcfce7;
+    }
+
+    .calendar-day.today {
+      outline: 2px solid #60a5fa;
+      outline-offset: 1px;
+    }
+
+    .calendar-tag {
+      position: absolute;
+      right: 4px;
+      bottom: 3px;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .retro-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .retro-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0b1220;
+      padding: 10px;
+    }
+
+    .retro-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 4px;
+    }
+
+    .retro-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
     @media (max-width: 400px) {
       .row {
         grid-template-columns: 1fr;
       }
       .exercise-weight {
         justify-content: flex-start;
+      }
+      .retro-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -272,11 +367,42 @@
       </div>
       <p class="muted">Formato: minutos e segundos.</p>
     </div>
+
+    <div class="card">
+      <h2>Calendário de treinos</h2>
+      <div class="calendar-head">
+        <span id="calendarMonthLabel" class="exercise-name"></span>
+        <div class="calendar-nav">
+          <button id="prevMonthBtn" class="btn-secondary" aria-label="Mês anterior">◀</button>
+          <button id="todayMonthBtn" class="btn-secondary">Hoje</button>
+          <button id="nextMonthBtn" class="btn-secondary" aria-label="Próximo mês">▶</button>
+        </div>
+      </div>
+      <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="Calendário de treino"></div>
+      <div class="actions">
+        <button id="markTodayBtn" class="btn-primary">Marcar treino de hoje</button>
+      </div>
+      <p class="muted">Toque em um dia para marcar/desmarcar. Salvo automaticamente.</p>
+    </div>
+
+    <div class="card">
+      <h2>Retrospectiva anual</h2>
+      <div class="calendar-head">
+        <span id="retroYearLabel" class="exercise-name"></span>
+        <div class="calendar-nav">
+          <button id="prevYearBtn" class="btn-secondary" aria-label="Ano anterior">◀</button>
+          <button id="currentYearBtn" class="btn-secondary">Ano atual</button>
+          <button id="nextYearBtn" class="btn-secondary" aria-label="Próximo ano">▶</button>
+        </div>
+      </div>
+      <div id="retroSummary" class="retro-grid"></div>
+    </div>
   </div>
 
   <script>
     const STORAGE_KEY = 'meuTreinoCargasV2';
     const ACTIVE_DAY_KEY = 'meuTreinoDiaAtivoV1';
+    const TRAINING_HISTORY_KEY = 'meuTreinoHistoricoV1';
 
     const PLANOS = {
       A: {
@@ -446,8 +572,28 @@
     const startPauseBtn = document.getElementById('startPauseBtn');
     const resetTimerBtn = document.getElementById('resetTimerBtn');
 
+    const calendarMonthLabelEl = document.getElementById('calendarMonthLabel');
+    const calendarGridEl = document.getElementById('calendarGrid');
+    const prevMonthBtn = document.getElementById('prevMonthBtn');
+    const todayMonthBtn = document.getElementById('todayMonthBtn');
+    const nextMonthBtn = document.getElementById('nextMonthBtn');
+    const markTodayBtn = document.getElementById('markTodayBtn');
+
+    const retroYearLabelEl = document.getElementById('retroYearLabel');
+    const retroSummaryEl = document.getElementById('retroSummary');
+    const prevYearBtn = document.getElementById('prevYearBtn');
+    const currentYearBtn = document.getElementById('currentYearBtn');
+    const nextYearBtn = document.getElementById('nextYearBtn');
+
     let cargas = loadCargas();
     let activeDay = loadActiveDay();
+    let trainingHistory = loadTrainingHistory();
+
+    const today = new Date();
+    let calendarYear = today.getFullYear();
+    let calendarMonth = today.getMonth();
+    let retrospectiveYear = today.getFullYear();
+
     let totalSeconds = 90;
     let remainingSeconds = totalSeconds;
     let timerId = null;
@@ -478,12 +624,206 @@
       localStorage.setItem(ACTIVE_DAY_KEY, activeDay);
     }
 
+    function loadTrainingHistory() {
+      try {
+        const raw = localStorage.getItem(TRAINING_HISTORY_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return {};
+
+        const cleaned = {};
+        Object.entries(parsed).forEach(([dateKey, dayValue]) => {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey) && typeof dayValue === 'string' && PLANOS[dayValue]) {
+            cleaned[dateKey] = dayValue;
+          }
+        });
+        return cleaned;
+      } catch {
+        return {};
+      }
+    }
+
+    function saveTrainingHistory() {
+      localStorage.setItem(TRAINING_HISTORY_KEY, JSON.stringify(trainingHistory));
+    }
+
+    function toDateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseDateKey(dateKey) {
+      const [year, month, day] = dateKey.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function formatMonthYear(year, month) {
+      return new Intl.DateTimeFormat('pt-BR', {
+        month: 'long',
+        year: 'numeric'
+      }).format(new Date(year, month, 1));
+    }
+
+    function markTraining(dateKey, day) {
+      trainingHistory[dateKey] = day;
+      saveTrainingHistory();
+      renderCalendar();
+      renderRetrospective();
+    }
+
+    function toggleTraining(dateKey) {
+      if (trainingHistory[dateKey]) {
+        delete trainingHistory[dateKey];
+      } else {
+        trainingHistory[dateKey] = activeDay;
+      }
+      saveTrainingHistory();
+      renderCalendar();
+      renderRetrospective();
+    }
+
+    function renderCalendar() {
+      calendarGridEl.innerHTML = '';
+      calendarMonthLabelEl.textContent = formatMonthYear(calendarYear, calendarMonth);
+
+      const weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+      weekdays.forEach((name) => {
+        const weekdayEl = document.createElement('div');
+        weekdayEl.className = 'calendar-weekday';
+        weekdayEl.textContent = name;
+        calendarGridEl.appendChild(weekdayEl);
+      });
+
+      const firstDay = new Date(calendarYear, calendarMonth, 1);
+      const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+      const startOffset = (firstDay.getDay() + 6) % 7;
+      const todayKey = toDateKey(new Date());
+
+      for (let i = 0; i < startOffset; i += 1) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-day empty';
+        empty.setAttribute('aria-hidden', 'true');
+        calendarGridEl.appendChild(empty);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const currentDate = new Date(calendarYear, calendarMonth, day);
+        const dateKey = toDateKey(currentDate);
+        const trainedDay = trainingHistory[dateKey];
+
+        const dayBtn = document.createElement('button');
+        dayBtn.type = 'button';
+        dayBtn.className = 'calendar-day';
+        dayBtn.dataset.date = dateKey;
+        dayBtn.setAttribute('aria-label', trainedDay
+          ? `${day} treinado (${trainedDay})`
+          : `${day} sem treino marcado`);
+        dayBtn.textContent = day;
+
+        if (trainedDay) {
+          dayBtn.classList.add('trained');
+          const tag = document.createElement('span');
+          tag.className = 'calendar-tag';
+          tag.textContent = trainedDay;
+          dayBtn.appendChild(tag);
+        }
+
+        if (dateKey === todayKey) {
+          dayBtn.classList.add('today');
+        }
+
+        calendarGridEl.appendChild(dayBtn);
+      }
+    }
+
+    function calculateStreaks(dateKeys) {
+      if (!dateKeys.length) {
+        return { longest: 0, latest: 0 };
+      }
+
+      let longest = 1;
+      let current = 1;
+
+      for (let i = 1; i < dateKeys.length; i += 1) {
+        const prevDate = parseDateKey(dateKeys[i - 1]);
+        const currentDate = parseDateKey(dateKeys[i]);
+        const diffDays = Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+          current += 1;
+          if (current > longest) longest = current;
+        } else {
+          current = 1;
+        }
+      }
+
+      return { longest, latest: current };
+    }
+
+    function createRetroItem(label, value) {
+      const item = document.createElement('div');
+      item.className = 'retro-item';
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'retro-label';
+      labelEl.textContent = label;
+
+      const valueEl = document.createElement('div');
+      valueEl.className = 'retro-value';
+      valueEl.textContent = value;
+
+      item.append(labelEl, valueEl);
+      return item;
+    }
+
+    function renderRetrospective() {
+      retroSummaryEl.innerHTML = '';
+      retroYearLabelEl.textContent = `Ano ${retrospectiveYear}`;
+
+      const filteredEntries = Object.entries(trainingHistory)
+        .filter(([dateKey]) => dateKey.startsWith(`${retrospectiveYear}-`))
+        .sort(([a], [b]) => a.localeCompare(b));
+
+      if (!filteredEntries.length) {
+        retroSummaryEl.appendChild(createRetroItem('Resumo', 'Sem treinos neste ano'));
+        return;
+      }
+
+      const total = filteredEntries.length;
+      const monthCounts = Array(12).fill(0);
+      const dayCounts = { A: 0, B: 0, C: 0, D: 0 };
+
+      filteredEntries.forEach(([dateKey, day]) => {
+        const parsedDate = parseDateKey(dateKey);
+        monthCounts[parsedDate.getMonth()] += 1;
+        if (dayCounts[day] !== undefined) dayCounts[day] += 1;
+      });
+
+      const bestMonthCount = Math.max(...monthCounts);
+      const bestMonthIndex = monthCounts.indexOf(bestMonthCount);
+      const bestMonthName = new Intl.DateTimeFormat('pt-BR', { month: 'long' })
+        .format(new Date(retrospectiveYear, bestMonthIndex, 1));
+
+      const streaks = calculateStreaks(filteredEntries.map(([dateKey]) => dateKey));
+      const favoriteDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0];
+
+      retroSummaryEl.appendChild(createRetroItem('Treinos totais', String(total)));
+      retroSummaryEl.appendChild(createRetroItem('Média mensal', (total / 12).toFixed(1)));
+      retroSummaryEl.appendChild(createRetroItem('Melhor mês', `${bestMonthName} (${bestMonthCount})`));
+      retroSummaryEl.appendChild(createRetroItem('Maior sequência', `${streaks.longest} dias`));
+      retroSummaryEl.appendChild(createRetroItem('Sequência recente', `${streaks.latest} dias`));
+      retroSummaryEl.appendChild(createRetroItem('Treino mais feito', `${favoriteDay[0]} (${favoriteDay[1]})`));
+    }
+
     function renderExercises() {
       listEl.innerHTML = '';
       const plano = PLANOS[activeDay];
 
       dayTitleEl.textContent = plano.titulo;
       dayFocusEl.textContent = plano.foco;
+      markTodayBtn.textContent = `Marcar treino de hoje (${activeDay})`;
 
       daySelectorEl.querySelectorAll('button').forEach((btn) => {
         const isActive = btn.dataset.day === activeDay;
@@ -658,8 +998,60 @@
       updateTimerDisplay();
     });
 
+    calendarGridEl.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-date]');
+      if (!button) return;
+      toggleTraining(button.dataset.date);
+    });
+
+    prevMonthBtn.addEventListener('click', () => {
+      calendarMonth -= 1;
+      if (calendarMonth < 0) {
+        calendarMonth = 11;
+        calendarYear -= 1;
+      }
+      renderCalendar();
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+      calendarMonth += 1;
+      if (calendarMonth > 11) {
+        calendarMonth = 0;
+        calendarYear += 1;
+      }
+      renderCalendar();
+    });
+
+    todayMonthBtn.addEventListener('click', () => {
+      const now = new Date();
+      calendarYear = now.getFullYear();
+      calendarMonth = now.getMonth();
+      renderCalendar();
+    });
+
+    markTodayBtn.addEventListener('click', () => {
+      markTraining(toDateKey(new Date()), activeDay);
+    });
+
+    prevYearBtn.addEventListener('click', () => {
+      retrospectiveYear -= 1;
+      renderRetrospective();
+    });
+
+    nextYearBtn.addEventListener('click', () => {
+      retrospectiveYear += 1;
+      renderRetrospective();
+    });
+
+    currentYearBtn.addEventListener('click', () => {
+      retrospectiveYear = new Date().getFullYear();
+      renderRetrospective();
+    });
+
     renderExercises();
     updateTimerDisplay();
+    renderCalendar();
+    renderRetrospective();
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
