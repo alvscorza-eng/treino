@@ -7,10 +7,10 @@
 4. Em **Source**, selecione **Deploy from a branch**.
 5. Escolha a branch `main` e pasta `/ (root)`.
 6. Salve e aguarde o link ficar disponível.
-7. Abra no iPhone o link final com `/treino.html`.
+7. Abra no iPhone o link final (sem sufixo de arquivo).
 
 Exemplo:
-`https://SEU-USUARIO.github.io/meu-treino/treino.html`
+`https://SEU-USUARIO.github.io/meu-treino/`
 
 ## 2) Instalar na Tela de Início (iPhone)
 1. Abra o link no **Safari**.
