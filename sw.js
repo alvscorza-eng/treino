@@ -1,11 +1,13 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const ASSET_CACHE = `meu-treino-assets-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `meu-treino-runtime-${CACHE_VERSION}`;
 const APP_SHELL = [
   './',
+  './index.html',
   './treino.html',
   './manifest.webmanifest',
-  './icon.svg'
+  './icon.svg',
+  './sw.js'
 ];
 
 function isCacheableResponse(response) {
@@ -48,7 +50,7 @@ async function networkFirstForNavigation(request) {
     if (cachedPage) return cachedPage;
 
     const appShellCache = await caches.open(ASSET_CACHE);
-    const fallback = await appShellCache.match('./treino.html');
+    const fallback = await appShellCache.match('./index.html');
     if (fallback) return fallback;
 
     return Response.error();
@@ -83,13 +85,42 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  const requestUrl = new URL(request.url);
-  if (requestUrl.origin !== self.location.origin) return;
-
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstForNavigation(request));
     return;
   }
 
   event.respondWith(staleWhileRevalidate(request, event));
+});
+
+self.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || data.type !== 'CACHE_URLS' || !Array.isArray(data.urls)) return;
+
+  event.waitUntil((async () => {
+    let cached = 0;
+    let failed = 0;
+    const runtimeCache = await caches.open(RUNTIME_CACHE);
+
+    for (const url of data.urls) {
+      try {
+        const response = await fetch(url, { mode: 'no-cors' });
+        if (response) {
+          await runtimeCache.put(url, response.clone());
+          cached += 1;
+        } else {
+          failed += 1;
+        }
+      } catch {
+        failed += 1;
+      }
+    }
+
+    event.source?.postMessage({
+      type: 'CACHE_RESULT',
+      ok: failed === 0,
+      cached,
+      failed
+    });
+  })());
 });
