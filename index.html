@@ -402,6 +402,38 @@
       background: #0b1220;
     }
 
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    .workout-status {
+      margin-bottom: 12px;
+    }
+
+    .pr-meta {
+      margin-top: 4px;
+    }
+
+    .backup-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
     @media (max-width: 400px) {
       .row {
         grid-template-columns: 1fr;
@@ -432,6 +464,13 @@
 
       <p id="dayTitle" class="exercise-name"></p>
       <p id="dayFocus" class="muted"></p>
+      <div id="workoutStatus" class="hint-box workout-status" aria-live="polite">
+        <div id="workoutProgressText" class="exercise-name">Progresso: 0 / 0 séries</div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso do treino">
+          <div id="workoutProgressFill" class="progress-fill"></div>
+        </div>
+        <div id="nextWorkoutHint" class="muted">Sugestão de próximo treino: A</div>
+      </div>
       <div id="exerciseList"></div>
 
       <div class="section-actions">
@@ -515,6 +554,16 @@
       </div>
       <div id="retroSummary" class="retro-grid"></div>
     </div>
+
+    <div class="card">
+      <h2>Backup de dados</h2>
+      <div class="backup-actions">
+        <button id="exportDataBtn" class="btn-secondary">Exportar JSON</button>
+        <button id="importDataBtn" class="btn-secondary">Importar JSON</button>
+        <input id="importFileInput" type="file" accept="application/json,.json" class="sr-only" aria-label="Selecionar arquivo de backup JSON" />
+      </div>
+      <p id="backupStatus" class="muted">Exporte para guardar uma cópia dos seus dados.</p>
+    </div>
   </div>
 
   <script>
@@ -523,6 +572,7 @@
     const TRAINING_HISTORY_KEY = 'meuTreinoHistoricoV1';
     const CUSTOM_EXERCISES_KEY = 'meuTreinoCustomExercisesV1';
     const SERIES_TRACK_KEY = 'meuTreinoSeriesTrackV1';
+    const WORKOUT_SET_LOG_KEY = 'meuTreinoSetLogV1';
 
     const PLANOS = {
       A: {
@@ -747,12 +797,22 @@
     const currentYearBtn = document.getElementById('currentYearBtn');
     const nextYearBtn = document.getElementById('nextYearBtn');
     const offlineStatusEl = document.getElementById('offlineStatus');
+    const workoutProgressTextEl = document.getElementById('workoutProgressText');
+    const workoutProgressFillEl = document.getElementById('workoutProgressFill');
+    const nextWorkoutHintEl = document.getElementById('nextWorkoutHint');
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    const importDataBtn = document.getElementById('importDataBtn');
+    const importFileInput = document.getElementById('importFileInput');
+    const backupStatusEl = document.getElementById('backupStatus');
 
     let cargas = loadCargas();
     let activeDay = loadActiveDay();
     let trainingHistory = loadTrainingHistory();
     let customExercisesByDay = loadCustomExercises();
     let seriesTrackByDate = loadSeriesTrack();
+    let workoutSetLog = loadWorkoutSetLog();
+
+    const DAY_SEQUENCE = ['A', 'B', 'C', 'D'];
 
     const today = new Date();
     let calendarYear = today.getFullYear();
@@ -859,6 +919,43 @@
       localStorage.setItem(SERIES_TRACK_KEY, JSON.stringify(seriesTrackByDate));
     }
 
+    function loadWorkoutSetLog() {
+      try {
+        const raw = localStorage.getItem(WORKOUT_SET_LOG_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return {};
+
+        const cleaned = {};
+        Object.entries(parsed).forEach(([dateKey, byExercise]) => {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !byExercise || typeof byExercise !== 'object') return;
+
+          const exerciseMap = {};
+          Object.entries(byExercise).forEach(([exerciseId, weights]) => {
+            if (!Array.isArray(weights)) return;
+            const normalized = weights
+              .map((weight) => Number(weight))
+              .filter((weight) => Number.isFinite(weight) && weight >= 0);
+            if (normalized.length) {
+              exerciseMap[exerciseId] = normalized;
+            }
+          });
+
+          if (Object.keys(exerciseMap).length) {
+            cleaned[dateKey] = exerciseMap;
+          }
+        });
+
+        return cleaned;
+      } catch {
+        return {};
+      }
+    }
+
+    function saveWorkoutSetLog() {
+      localStorage.setItem(WORKOUT_SET_LOG_KEY, JSON.stringify(workoutSetLog));
+    }
+
     function toDateKey(date) {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -883,6 +980,7 @@
       saveTrainingHistory();
       renderCalendar();
       renderRetrospective();
+      renderWorkoutStatus();
     }
 
     function toggleTraining(dateKey) {
@@ -894,6 +992,130 @@
       saveTrainingHistory();
       renderCalendar();
       renderRetrospective();
+      renderWorkoutStatus();
+    }
+
+    function parseBlockSeriesTarget(title) {
+      const match = String(title || '').match(/(\d+)\s*(séries|series|voltas?)/i);
+      if (!match) return 3;
+      return Math.max(1, Number(match[1]) || 3);
+    }
+
+    function formatWeight(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return '0';
+      return numeric.toLocaleString('pt-BR', {
+        minimumFractionDigits: Number.isInteger(numeric) ? 0 : 1,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function getProgressionIncrement(exerciseName) {
+      const normalized = String(exerciseName || '').toLowerCase();
+      if (/halter|dumbbell/.test(normalized)) return 2.5;
+      if (/barra|barbell|smith/.test(normalized)) return 5;
+      return 2.5;
+    }
+
+    function getNextDay(day) {
+      const index = DAY_SEQUENCE.indexOf(day);
+      if (index < 0) return 'A';
+      return DAY_SEQUENCE[(index + 1) % DAY_SEQUENCE.length];
+    }
+
+    function getLatestTrainingEntry() {
+      const entries = Object.entries(trainingHistory)
+        .filter(([, day]) => DAY_SEQUENCE.includes(day))
+        .sort(([a], [b]) => a.localeCompare(b));
+      if (!entries.length) return null;
+      return entries[entries.length - 1];
+    }
+
+    function getNextWorkoutSuggestionText() {
+      const latest = getLatestTrainingEntry();
+      if (!latest) {
+        return 'Sugestão de próximo treino: A';
+      }
+
+      const [dateKey, day] = latest;
+      const nextDay = getNextDay(day);
+      return `Sugestão de próximo treino: ${nextDay} (último registrado: ${day} em ${formatDateKey(dateKey)})`;
+    }
+
+    function getDayProgress(day, dateKey = toDateKey(new Date())) {
+      const blocks = getCombinedExercises(day);
+      const daySeries = seriesTrackByDate[dateKey] || {};
+
+      let done = 0;
+      let total = 0;
+
+      blocks.forEach((block) => {
+        const target = parseBlockSeriesTarget(block.titulo);
+        block.exercicios.forEach((exercise) => {
+          const completed = Number(daySeries[exercise.id] || 0);
+          done += Math.min(completed, target);
+          total += target;
+        });
+      });
+
+      const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
+      return { done, total, percentage };
+    }
+
+    function recordSet(dateKey, exerciseId, weight) {
+      if (!workoutSetLog[dateKey]) {
+        workoutSetLog[dateKey] = {};
+      }
+      if (!Array.isArray(workoutSetLog[dateKey][exerciseId])) {
+        workoutSetLog[dateKey][exerciseId] = [];
+      }
+      workoutSetLog[dateKey][exerciseId].push(Number.isFinite(weight) ? weight : 0);
+    }
+
+    function getExercisePRData(exerciseId) {
+      const dates = Object.keys(workoutSetLog).sort();
+
+      let lastWeight = null;
+      let lastDate = null;
+      let maxWeight = 0;
+      let maxVolume = 0;
+
+      dates.forEach((dateKey) => {
+        const sets = workoutSetLog?.[dateKey]?.[exerciseId];
+        if (!Array.isArray(sets) || !sets.length) return;
+
+        const setNumbers = sets.map((weight) => Number(weight)).filter((weight) => Number.isFinite(weight));
+        if (!setNumbers.length) return;
+
+        const highestInDate = Math.max(...setNumbers);
+        const volumeInDate = setNumbers.reduce((sum, weight) => sum + weight, 0);
+
+        if (highestInDate > maxWeight) maxWeight = highestInDate;
+        if (volumeInDate > maxVolume) maxVolume = volumeInDate;
+
+        lastDate = dateKey;
+        lastWeight = setNumbers[setNumbers.length - 1];
+      });
+
+      return {
+        lastWeight,
+        lastDate,
+        maxWeight,
+        maxVolume
+      };
+    }
+
+    function formatDateKey(dateKey) {
+      if (!dateKey) return '—';
+      const [year, month, day] = dateKey.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    function renderWorkoutStatus() {
+      const progress = getDayProgress(activeDay);
+      workoutProgressTextEl.textContent = `Progresso: ${progress.done} / ${progress.total} séries`;
+      workoutProgressFillEl.style.width = `${progress.percentage}%`;
+      nextWorkoutHintEl.textContent = getNextWorkoutSuggestionText();
     }
 
     function renderCalendar() {
@@ -1107,14 +1329,34 @@
       return Number(seriesTrackByDate?.[todayKey]?.[exerciseId] || 0);
     }
 
-    function markSeries(exerciseId) {
+    function markSeries(exercise, targetSeries) {
       const todayKey = toDateKey(new Date());
       if (!seriesTrackByDate[todayKey]) {
         seriesTrackByDate[todayKey] = {};
       }
+
+      const exerciseId = exercise.id;
       const current = Number(seriesTrackByDate[todayKey][exerciseId] || 0);
-      seriesTrackByDate[todayKey][exerciseId] = current + 1;
+      const nextValue = current + 1;
+      seriesTrackByDate[todayKey][exerciseId] = nextValue;
+
+      const currentWeight = Number(cargas[exerciseId] || 0);
+      recordSet(todayKey, exerciseId, currentWeight);
+
       saveSeriesTrack();
+      saveWorkoutSetLog();
+
+      if (nextValue === targetSeries && currentWeight > 0) {
+        const increment = getProgressionIncrement(exercise.nome);
+        const suggested = Number((currentWeight + increment).toFixed(2));
+        const accepted = confirm(`Concluiu todas as séries de ${exercise.nome}. Próximo treino: +${formatWeight(increment)} kg?`);
+
+        if (accepted) {
+          cargas[exerciseId] = suggested;
+          saveCargas();
+        }
+      }
+
       renderExercises();
     }
 
@@ -1245,6 +1487,8 @@
         blocoEl.appendChild(metaEl);
 
         bloco.exercicios.forEach((exercise) => {
+          const targetSeries = parseBlockSeriesTarget(bloco.titulo);
+          const prData = getExercisePRData(exercise.id);
           const details = getExerciseDetails(exercise);
           const row = document.createElement('div');
           row.className = 'row';
@@ -1262,6 +1506,14 @@
           const descriptionText = details.descricao || exercise.nota;
           meta.textContent = `${exercise.reps}${descriptionText ? ` • ${descriptionText}` : ''}`;
 
+          const prMeta = document.createElement('div');
+          prMeta.className = 'exercise-meta pr-meta';
+          const lastWeightText = prData.lastWeight !== null ? `${formatWeight(prData.lastWeight)} kg` : '—';
+          const maxWeightText = prData.maxWeight > 0 ? `${formatWeight(prData.maxWeight)} kg 🔥` : '—';
+          const maxVolumeText = prData.maxVolume > 0 ? `${formatWeight(prData.maxVolume)} kg` : '—';
+          const lastDateText = prData.lastDate ? formatDateKey(prData.lastDate) : '—';
+          prMeta.textContent = `Último: ${lastWeightText} • Recorde: ${maxWeightText} • Volume PR: ${maxVolumeText} • Última vez: ${lastDateText}`;
+
           const muscles = document.createElement('div');
           muscles.className = 'inline-chip';
           muscles.textContent = details.musculos || 'Músculos gerais';
@@ -1271,18 +1523,18 @@
 
           const seriesBadge = document.createElement('span');
           seriesBadge.className = 'muted';
-          seriesBadge.textContent = `Séries hoje: ${getSeriesCount(exercise.id)}`;
+          seriesBadge.textContent = `Séries hoje: ${getSeriesCount(exercise.id)} / ${targetSeries}`;
 
           const seriesButton = document.createElement('button');
           seriesButton.type = 'button';
           seriesButton.className = 'btn-series';
           seriesButton.textContent = '+ Marcar série';
           seriesButton.setAttribute('aria-label', `Marcar uma série em ${exercise.nome}`);
-          seriesButton.addEventListener('click', () => markSeries(exercise.id));
+          seriesButton.addEventListener('click', () => markSeries(exercise, targetSeries));
 
           seriesRow.append(seriesButton, seriesBadge);
 
-          left.append(name, muscles, meta, seriesRow);
+          left.append(name, muscles, meta, prMeta, seriesRow);
 
           const right = document.createElement('div');
           right.className = 'exercise-weight';
@@ -1312,6 +1564,85 @@
 
         listEl.appendChild(blocoEl);
       });
+
+      renderWorkoutStatus();
+    }
+
+    function exportBackupData() {
+      const payload = {
+        version: 1,
+        generatedAt: new Date().toISOString(),
+        data: {
+          cargas,
+          activeDay,
+          trainingHistory,
+          customExercisesByDay,
+          seriesTrackByDate,
+          workoutSetLog
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const dateLabel = toDateKey(new Date());
+      link.href = url;
+      link.download = `meu-treino-backup-${dateLabel}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      backupStatusEl.textContent = 'Backup exportado com sucesso.';
+    }
+
+    async function importBackupData(file) {
+      if (!file) return;
+
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const data = parsed?.data || parsed;
+
+      if (!data || typeof data !== 'object') {
+        throw new Error('Arquivo inválido');
+      }
+
+      if (data.cargas && typeof data.cargas === 'object') {
+        cargas = data.cargas;
+        saveCargas();
+      }
+
+      if (data.activeDay && PLANOS[data.activeDay]) {
+        activeDay = data.activeDay;
+        saveActiveDay();
+      }
+
+      if (data.trainingHistory && typeof data.trainingHistory === 'object') {
+        trainingHistory = data.trainingHistory;
+        saveTrainingHistory();
+      }
+
+      if (data.customExercisesByDay && typeof data.customExercisesByDay === 'object') {
+        customExercisesByDay = data.customExercisesByDay;
+        saveCustomExercises();
+      }
+
+      if (data.seriesTrackByDate && typeof data.seriesTrackByDate === 'object') {
+        seriesTrackByDate = data.seriesTrackByDate;
+        saveSeriesTrack();
+      }
+
+      if (data.workoutSetLog && typeof data.workoutSetLog === 'object') {
+        workoutSetLog = data.workoutSetLog;
+        saveWorkoutSetLog();
+      }
+
+      renderExercises();
+      renderExerciseLibrary();
+      renderCalendar();
+      renderRetrospective();
+
+      backupStatusEl.textContent = 'Backup importado com sucesso.';
     }
 
     function resetCurrentDayLoads() {
@@ -1463,6 +1794,29 @@
       }, 60 * 60 * 1000);
 
       scheduleReminderBtn.textContent = 'Lembrete agendado';
+    });
+
+    exportDataBtn.addEventListener('click', () => {
+      try {
+        exportBackupData();
+      } catch {
+        backupStatusEl.textContent = 'Erro ao exportar backup.';
+      }
+    });
+
+    importDataBtn.addEventListener('click', () => {
+      importFileInput.value = '';
+      importFileInput.click();
+    });
+
+    importFileInput.addEventListener('change', async () => {
+      const [file] = importFileInput.files || [];
+      if (!file) return;
+      try {
+        await importBackupData(file);
+      } catch {
+        backupStatusEl.textContent = 'Arquivo inválido ou corrompido.';
+      }
     });
 
     calendarGridEl.addEventListener('click', (event) => {
