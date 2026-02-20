@@ -32,14 +32,12 @@ Pronto: vai abrir como app, em tela cheia.
 4. Em último caso: iPhone > Ajustes > Safari > Avançado > Dados dos Sites > remova o site e instale de novo na Tela de Início.
 
 ## 5) Recursos novos no app
-- **Banco de exercícios com mídia**: seção com demonstrações em vídeo/GIF, descrição e músculos trabalhados.
+- **Banco de exercícios com referência visual rápida**: toque no nome do exercício para abrir o Google Imagens com aquele termo.
 - **Marcação rápida de série**: botão grande `+ Marcar série` em cada exercício para uso rápido durante o treino.
 - **Treino personalizado**: formulário para adicionar exercícios próprios ao treino ativo (A/B/C/D), salvo no celular.
-- **Modo offline de mídia**: botão `Baixar mídias do treino atual` para pedir cache local das mídias via service worker.
 - **Notificações inteligentes**: botão `Ativar notificações` + `Lembrete em 60 min` e alerta ao fim do timer de descanso.
 - **Descanso ativo**: durante o timer aparecem dicas curtas de alongamento/correção postural.
 
 ## 6) Observações do modo offline
-- O primeiro uso precisa de internet para baixar as mídias.
-- Algumas URLs externas podem bloquear cache dependendo da política do servidor de origem.
-- Se o botão de download avisar que o service worker não está ativo, feche e abra o app novamente.
+- O app continua funcionando como PWA com cache dos arquivos principais.
+- A busca no Google Imagens depende de internet no momento do clique.

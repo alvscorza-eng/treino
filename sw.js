@@ -93,34 +93,12 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(staleWhileRevalidate(request, event));
 });
 
-self.addEventListener('message', (event) => {
-  const data = event.data;
-  if (!data || data.type !== 'CACHE_URLS' || !Array.isArray(data.urls)) return;
+self.addEventListener('message', async (event) => {
+  if (event.data?.type !== 'GET_CACHE_STATUS') return;
 
-  event.waitUntil((async () => {
-    let cached = 0;
-    let failed = 0;
-    const runtimeCache = await caches.open(RUNTIME_CACHE);
-
-    for (const url of data.urls) {
-      try {
-        const response = await fetch(url, { mode: 'no-cors' });
-        if (response) {
-          await runtimeCache.put(url, response.clone());
-          cached += 1;
-        } else {
-          failed += 1;
-        }
-      } catch {
-        failed += 1;
-      }
-    }
-
-    event.source?.postMessage({
-      type: 'CACHE_RESULT',
-      ok: failed === 0,
-      cached,
-      failed
-    });
-  })());
+  const hasAssetCache = (await caches.keys()).includes(ASSET_CACHE);
+  event.ports[0]?.postMessage({
+    type: 'CACHE_STATUS',
+    ready: hasAssetCache
+  });
 });
