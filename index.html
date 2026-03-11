@@ -740,13 +740,12 @@
         <button id="shareWorkoutBtn" class="btn-secondary" type="button">Compartilhar resultado</button>
       </div>
       <p id="offlineFeatureHint" class="muted offline-tip"></p>
-      <h2>ABCD - 45 minutos</h2>
+      <h2>PPL - Hipertrofia máxima</h2>
 
       <div class="day-selector" id="daySelector" aria-label="Seleção de treino por dia">
         <button class="day-btn" data-day="A" aria-label="Treino A">A</button>
         <button class="day-btn" data-day="B" aria-label="Treino B">B</button>
         <button class="day-btn" data-day="C" aria-label="Treino C">C</button>
-        <button class="day-btn" data-day="D" aria-label="Treino D">D</button>
       </div>
 
       <p id="dayTitle" class="exercise-name"></p>
@@ -884,152 +883,145 @@
 
     const PLANOS = {
       A: {
-        titulo: 'Treino A: Pernas Completo',
-        foco: 'Quadríceps, posterior e panturrilha. Alta intensidade com supersets e drop set.',
+        titulo: 'Treino A: Push (Peito, Ombros e Tríceps)',
+        foco: 'Empurrar e gerar alta tensão no peitoral superior com controle total da fase excêntrica.',
         blocos: [
           {
-            titulo: '1) Bloco de Força (Superset) - 4 séries',
+            titulo: '1) Base de Peito - 3 séries',
+            meta: 'Descanso: 90-120s',
+            exercicios: [
+              { id: 'a_supino_inclinado', nome: 'Supino Inclinado (Halteres ou Smith)', reps: '8-10 reps', nota: 'Alongar no fundo e controlar a descida.' }
+            ]
+          },
+          {
+            titulo: '2) Isolamento Peitoral - 3 séries',
             meta: 'Descanso: 60-90s',
             exercicios: [
-              { id: 'a_agachamento', nome: 'Agachamento Livre ou Smith', reps: '8-10 reps', nota: 'Carga pesada e boa amplitude.' },
-              { id: 'a_extensora', nome: 'Cadeira Extensora', reps: '12-15 reps', nota: 'Drop set na última série.' }
+              { id: 'a_pec_deck', nome: 'Pec Deck (Voador)', reps: '12-15 reps', nota: 'Pausa de 1s na contração máxima.' }
             ]
           },
           {
-            titulo: '2) Bloco Posterior (Superset) - 3 séries',
-            meta: 'Descanso: 60s',
-            exercicios: [
-              { id: 'a_stiff', nome: 'Stiff (halteres ou barra)', reps: '10-12 reps', nota: 'Coluna neutra e descida controlada.' },
-              { id: 'a_flexora', nome: 'Mesa Flexora ou Flexora Vertical', reps: '12 reps', nota: 'Foco no alongamento do posterior.' }
-            ]
-          },
-          {
-            titulo: '3) Bloco de Pressão - 3 séries',
+            titulo: '3) Ombros - 3 séries',
             meta: 'Descanso: 90s',
             exercicios: [
-              { id: 'a_legpress', nome: 'Leg Press 45°', reps: '10 pesada + 10 média + 10 leve', nota: 'Sem descanso nas trocas de carga.' }
+              { id: 'a_ohp_halteres', nome: 'Desenvolvimento Militar (OHP) com Halteres', reps: '8-10 reps', nota: 'Subida forte sem perder controle do core.' }
             ]
           },
           {
-            titulo: '4) Finalização (Superset) - 3 séries',
-            meta: 'Descanso: 45s',
+            titulo: '4) Deltoide Lateral - 4 séries',
+            meta: 'Descanso: 60s',
             exercicios: [
-              { id: 'a_panturrilha_pe', nome: 'Panturrilha em pé', reps: '15-20 reps', nota: '' },
-              { id: 'a_adutora', nome: 'Cadeira Adutora', reps: '15 reps', nota: 'Concentração máxima na contração.' }
+              { id: 'a_elevacao_lateral_cabo', nome: 'Elevação Lateral (Cabo)', reps: '12-15 reps', nota: 'Polia na altura da mão para tensão constante.' }
+            ]
+          },
+          {
+            titulo: '5) Tríceps Alongado - 3 séries',
+            meta: 'Descanso: 60-90s',
+            exercicios: [
+              { id: 'a_triceps_acima_cabo', nome: 'Extensão de Tríceps Acima da Cabeça (Cabo)', reps: '10-12 reps', nota: 'Priorizar alongamento da cabeça longa.' }
+            ]
+          },
+          {
+            titulo: '6) Tríceps Finalização - 3 séries',
+            meta: 'Descanso: 60s',
+            exercicios: [
+              { id: 'a_triceps_pulley', nome: 'Tríceps Pulley (Corda ou Barra)', reps: '12-15 reps', nota: 'Extensão completa sem roubar com o ombro.' }
             ]
           }
         ]
       },
       B: {
-        titulo: 'Treino B: Costas, Tríceps e Abs',
-        foco: 'Estratégia puxar/empurrar com supersets para densidade e eficiência.',
+        titulo: 'Treino B: Pull (Costas, Deltoide Posterior e Bíceps)',
+        foco: 'Largura de costas e densidade de bíceps com puxadas controladas e boa amplitude.',
         blocos: [
           {
-            titulo: '1) Os Gigantes (Superset) - 4 séries',
+            titulo: '1) Puxada Vertical - 3 séries',
+            meta: 'Descanso: 90-120s',
+            exercicios: [
+              { id: 'b_lat_pulldown', nome: 'Puxada Alta (Lat Pulldown)', reps: '8-10 reps', nota: 'Levar o peito em direção à barra.' }
+            ]
+          },
+          {
+            titulo: '2) Remada Horizontal - 3 séries',
+            meta: 'Descanso: 90s',
+            exercicios: [
+              { id: 'b_remada_tbar', nome: 'Remada T-Bar (Apoiada no Peito)', reps: '10-12 reps', nota: 'Evitar balanço do tronco.' }
+            ]
+          },
+          {
+            titulo: '3) Isolamento de Dorsal - 2 séries',
+            meta: 'Descanso: 60-90s',
+            exercicios: [
+              { id: 'b_pullover_corda', nome: 'Pullover na Corda ou Máquina', reps: '15 reps', nota: 'Isolamento puro do latíssimo.' }
+            ]
+          },
+          {
+            titulo: '4) Deltoide Posterior - 3 séries',
             meta: 'Descanso: 60s',
             exercicios: [
-              { id: 'b_barra_fixa', nome: 'Barra Fixa ou Graviton', reps: '8-10 reps ou limite', nota: 'Controle total do movimento.' },
-              { id: 'b_dips', nome: 'Mergulho nas Paralelas (Dips)', reps: '10-12 reps', nota: '' }
+              { id: 'b_crucifixo_inverso', nome: 'Crucifixo Inverso no Peck Deck', reps: '12-15 reps', nota: 'Executar de lado na máquina para alongar mais.' }
             ]
           },
           {
-            titulo: '2) Densidade e Volume (Superset) - 3 séries',
+            titulo: '5) Bíceps Base - 3 séries',
+            meta: 'Descanso: 60-90s',
+            exercicios: [
+              { id: 'b_rosca_scott', nome: 'Rosca Scott (Preacher Curl)', reps: '10-12 reps', nota: 'Controle total da fase excêntrica.' }
+            ]
+          },
+          {
+            titulo: '6) Bíceps Alongado - 3 séries',
             meta: 'Descanso: 60s',
             exercicios: [
-              { id: 'b_remada', nome: 'Remada Curvada', reps: '10 reps', nota: 'Esmagar escápulas no pico.' },
-              { id: 'b_triceps_testa', nome: 'Tríceps Testa', reps: '12 reps', nota: 'Drop set na 3ª série.' }
-            ]
-          },
-          {
-            titulo: '3) Isolamento (Superset) - 3 séries',
-            meta: 'Descanso: 45s',
-            exercicios: [
-              { id: 'b_pulldown_estendido', nome: 'Pulldown com braços estendidos', reps: '15 reps', nota: '' },
-              { id: 'b_triceps_corda', nome: 'Tríceps Corda', reps: '12-15 reps', nota: 'Abrir bem a corda no final.' }
-            ]
-          },
-          {
-            titulo: '4) Core (Circuito) - 3 voltas',
-            meta: 'Descanso: 30s entre voltas',
-            exercicios: [
-              { id: 'b_elevacao_pernas', nome: 'Elevação de Pernas', reps: '15 reps', nota: '' },
-              { id: 'b_reza_cabo', nome: 'Abdominal Reza (cabo)', reps: '15-20 reps', nota: '' },
-              { id: 'b_prancha', nome: 'Prancha Isométrica', reps: '45s', nota: '' }
+              { id: 'b_bayesian_curl', nome: 'Bíceps no Cabo (Bayesian Curl)', reps: '12 reps', nota: 'Dar um passo à frente da polia para alongar no início.' }
             ]
           }
         ]
       },
       C: {
-        titulo: 'Treino C: Peito e Bíceps',
-        foco: 'Hipertrofia e densidade muscular.',
+        titulo: 'Treino C: Legs (Quadríceps, Isquiotibiais e Panturrilhas)',
+        foco: 'Força bruta e volume de pernas com ênfase em amplitude e sobrecarga progressiva.',
         blocos: [
           {
-            titulo: '1) Bloco de Volume (Peito) - 4 séries',
-            meta: 'Superset sem descanso entre exercícios',
+            titulo: '1) Agachamento Guiado - 3 séries',
+            meta: 'Descanso: 90-120s',
             exercicios: [
-              { id: 'c_supino_inclinado', nome: 'Supino Inclinado (Halteres)', reps: '8-10 reps', nota: '' },
-              { id: 'c_flexao', nome: 'Flexão de Braço', reps: 'Até a falha', nota: 'Executar logo após o supino.' }
+              { id: 'c_hack_squat', nome: 'Hack Squat ou Agachamento Smith', reps: '8-10 reps', nota: 'Pés mais baixos para enfatizar quadríceps.' }
             ]
           },
           {
-            titulo: '2) Bloco de Força (Peito) - 3 séries',
-            meta: 'Drop set na última série',
+            titulo: '2) Extensão de Joelho - 3 séries',
+            meta: 'Descanso: 60-90s',
             exercicios: [
-              { id: 'c_supino_reto', nome: 'Supino Reto (Barra ou Máquina)', reps: '10 reps', nota: 'Reduzir ~30% e ir até falha no final.' }
+              { id: 'c_extensora', nome: 'Cadeira Extensora', reps: '12-15 reps', nota: 'Segurar 1s no topo para ativar reto femoral.' }
             ]
           },
           {
-            titulo: '3) Isolamento e Pico (Superset) - 3 séries',
-            meta: '',
+            titulo: '3) Dominante de Quadril - 3 séries',
+            meta: 'Descanso: 90s',
             exercicios: [
-              { id: 'c_pec_deck', nome: 'Crucifixo Máquina (Pec Deck)', reps: '12-15 reps', nota: 'Peito estufado no movimento.' },
-              { id: 'c_rosca_direta', nome: 'Rosca Direta (Barra W/Reta)', reps: '10-12 reps', nota: 'Evitar balanço de tronco.' }
+              { id: 'c_rdl', nome: 'Stiff (RDL) com Halteres ou Barra', reps: '8-10 reps', nota: 'Descer até sentir o máximo alongamento dos posteriores.' }
             ]
           },
           {
-            titulo: '4) Finalizador Bíceps - 3 séries',
-            meta: '',
+            titulo: '4) Flexão de Joelho - 3 séries',
+            meta: 'Descanso: 60-90s',
             exercicios: [
-              { id: 'c_rosca_martelo', nome: 'Rosca Martelo (Halteres)', reps: '12 reps', nota: '' },
-              { id: 'c_rosca_concentrada', nome: 'Rosca Concentrada', reps: '10 reps', nota: 'Sem descanso entre braços.' }
-            ]
-          }
-        ]
-      },
-      D: {
-        titulo: 'Treino D: Ombros, Trapézio, Abs e Panturrilhas',
-        foco: 'Largura de ombros (V-taper) e finalização de membros inferiores.',
-        blocos: [
-          {
-            titulo: '1) Bloco de Largura (Ombros) - 4 séries',
-            meta: '',
-            exercicios: [
-              { id: 'd_desenvolvimento', nome: 'Desenvolvimento Militar', reps: '8-10 reps', nota: '' },
-              { id: 'd_elevacao_lateral', nome: 'Elevação Lateral', reps: '12-15 reps', nota: '' }
+              { id: 'c_flexora_sentada', nome: 'Flexora Sentada', reps: '12-15 reps', nota: 'Inclinar levemente o tronco à frente para aumentar tensão.' }
             ]
           },
           {
-            titulo: '2) Detalhamento (Posterior/Trapézio) - 3 séries',
-            meta: 'Drop set no encolhimento na última série',
+            titulo: '5) Panturrilhas - 4 séries',
+            meta: 'Descanso: 60s',
             exercicios: [
-              { id: 'd_posterior', nome: 'Elevação Lateral Inclinado', reps: '12 reps', nota: 'Posterior de ombro.' },
-              { id: 'd_encolhimento', nome: 'Encolhimento (halteres/barra)', reps: '15 reps', nota: 'Segurar 2s no topo.' }
+              { id: 'c_panturrilha_pe', nome: 'Elevação de Panturrilha em Pé', reps: '15-20 reps', nota: 'Pausa de 1s no alongamento embaixo.' }
             ]
           },
           {
-            titulo: '3) Core (Abs) - 3 séries',
-            meta: '',
+            titulo: '6) Core - 3 séries',
+            meta: 'Descanso: 60s',
             exercicios: [
-              { id: 'd_infra', nome: 'Abdominal Infra', reps: '15-20 reps', nota: 'Movimento lento e controlado.' },
-              { id: 'd_supra', nome: 'Abdominal Supra (com peso)', reps: '15 reps', nota: 'Soltar ar no topo da contração.' }
-            ]
-          },
-          {
-            titulo: '4) Panturrilha - 4 séries',
-            meta: 'Rest-pause na última série',
-            exercicios: [
-              { id: 'd_panturrilha_pe', nome: 'Panturrilha em pé', reps: '15-20 reps', nota: '' },
-              { id: 'd_panturrilha_sentado', nome: 'Panturrilha sentado (cavalinho)', reps: '15 reps', nota: 'Falhou, descansa 10s e continua.' }
+              { id: 'c_cable_crunch', nome: 'Cable Crunch (Abdominal Polia)', reps: '15 reps', nota: 'Enrolar a coluna, não apenas descer o quadril.' }
             ]
           }
         ]
@@ -1037,23 +1029,24 @@
     };
 
     const EXERCISE_LIBRARY = [
-      { id: 'a_agachamento', nome: 'Agachamento Livre ou Smith', musculos: 'Quadríceps, glúteos, core', descricao: 'Pés firmes e coluna neutra; desça até amplitude segura.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-barbell-squat-side.gif' },
-      { id: 'a_extensora', nome: 'Cadeira Extensora', musculos: 'Quadríceps', descricao: 'Suba controlando e segure 1s no topo da contração.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-leg-extension-side.gif' },
-      { id: 'a_stiff', nome: 'Stiff (halteres ou barra)', musculos: 'Posterior de coxa, glúteos', descricao: 'Quadril para trás, joelhos semi-flexionados e lombar neutra.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-romanian-deadlift-side.gif' },
-      { id: 'a_flexora', nome: 'Mesa Flexora ou Flexora Vertical', musculos: 'Posterior de coxa', descricao: 'Evite tirar o quadril do banco e controle a volta.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-leg-curl-side.gif' },
-      { id: 'a_legpress', nome: 'Leg Press 45°', musculos: 'Quadríceps, glúteos', descricao: 'Desça até manter lombar estável e empurre sem travar joelhos.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-leg-press-side.gif' },
-      { id: 'b_barra_fixa', nome: 'Barra Fixa ou Graviton', musculos: 'Dorsal, bíceps', descricao: 'Puxe com cotovelos para baixo e evite impulso.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Bodyweight-pullup-side.gif' },
-      { id: 'b_dips', nome: 'Mergulho nas Paralelas (Dips)', musculos: 'Tríceps, peitoral inferior', descricao: 'Tronco levemente inclinado e descida sob controle.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Bodyweight-dips-side.gif' },
-      { id: 'b_remada', nome: 'Remada Curvada', musculos: 'Costas, posterior de ombro', descricao: 'Mantenha o tronco firme e puxe em direção ao abdômen.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-barbell-row-side.gif' },
-      { id: 'b_triceps_testa', nome: 'Tríceps Testa', musculos: 'Tríceps', descricao: 'Cotovelos fixos e controle da barra/halteres na descida.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-lying-tricep-extension-side.gif' },
-      { id: 'c_supino_inclinado', nome: 'Supino Inclinado (Halteres)', musculos: 'Peitoral superior, tríceps', descricao: 'Escápulas encaixadas e subida sem bater halteres.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Dumbbells-incline-bench-press-side.gif' },
-      { id: 'c_supino_reto', nome: 'Supino Reto (Barra ou Máquina)', musculos: 'Peitoral, tríceps, ombro anterior', descricao: 'Pés fixos no chão e barra tocando levemente o peito.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-bench-press-side.gif' },
-      { id: 'c_pec_deck', nome: 'Crucifixo Máquina (Pec Deck)', musculos: 'Peitoral', descricao: 'Aproxime os braços em arco e volte controlando.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-pec-deck-fly-side.gif' },
-      { id: 'c_rosca_direta', nome: 'Rosca Direta (Barra W/Reta)', musculos: 'Bíceps', descricao: 'Cotovelos ao lado do tronco, sem balanço.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-barbell-curl-side.gif' },
-      { id: 'd_desenvolvimento', nome: 'Desenvolvimento Militar', musculos: 'Ombros, tríceps', descricao: 'Empurre acima da cabeça sem perder estabilidade do core.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-standing-military-press-side.gif' },
-      { id: 'd_elevacao_lateral', nome: 'Elevação Lateral', musculos: 'Deltoide lateral', descricao: 'Suba até a linha do ombro com cotovelos semi-flexionados.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Dumbbells-dumbbell-lateral-raise-side.gif' },
-      { id: 'd_encolhimento', nome: 'Encolhimento (halteres/barra)', musculos: 'Trapézio', descricao: 'Eleve os ombros para cima e desça controlando.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Dumbbells-dumbbell-shrug-side.gif' },
-      { id: 'b_prancha', nome: 'Prancha Isométrica', musculos: 'Core', descricao: 'Alinhe cabeça, tronco e quadril sem compensar lombar.', media: 'https://media.tenor.com/oqfD8WmKu14AAAAC/plank-fitness.gif' }
+      { id: 'a_supino_inclinado', nome: 'Supino Inclinado (Halteres ou Smith)', musculos: 'Peitoral superior, ombro anterior, tríceps', descricao: 'Escápulas firmes e descida controlada para alongamento ativo.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Dumbbells-incline-bench-press-side.gif' },
+      { id: 'a_pec_deck', nome: 'Pec Deck (Voador)', musculos: 'Peitoral', descricao: 'Feche os braços em arco e pause no pico da contração.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-pec-deck-fly-side.gif' },
+      { id: 'a_ohp_halteres', nome: 'Desenvolvimento Militar (OHP) com Halteres', musculos: 'Deltoides, tríceps', descricao: 'Pressione acima da cabeça mantendo o tronco estável.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Dumbbells-seated-shoulder-press-side.gif' },
+      { id: 'a_elevacao_lateral_cabo', nome: 'Elevação Lateral (Cabo)', musculos: 'Deltoide lateral', descricao: 'Suba até a linha do ombro sem usar embalo.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Cables-cable-lateral-raise-side.gif' },
+      { id: 'a_triceps_acima_cabo', nome: 'Extensão de Tríceps Acima da Cabeça (Cabo)', musculos: 'Tríceps (cabeça longa)', descricao: 'Cotovelos fixos e amplitude completa no alongamento.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Cables-overhead-tricep-extension-side.gif' },
+      { id: 'a_triceps_pulley', nome: 'Tríceps Pulley (Corda ou Barra)', musculos: 'Tríceps', descricao: 'Estenda até o fim e abra a corda na parte final.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Cables-tricep-pushdown-side.gif' },
+      { id: 'b_lat_pulldown', nome: 'Puxada Alta (Lat Pulldown)', musculos: 'Dorsal, bíceps', descricao: 'Puxe com cotovelos para baixo e peito aberto.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-lat-pulldown-side.gif' },
+      { id: 'b_remada_tbar', nome: 'Remada T-Bar (Apoiada no Peito)', musculos: 'Costas médias, dorsal, bíceps', descricao: 'Conduza os cotovelos para trás sem balançar o tronco.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-t-bar-row-side.gif' },
+      { id: 'b_pullover_corda', nome: 'Pullover na Corda ou Máquina', musculos: 'Latíssimo', descricao: 'Braços quase estendidos e trajetória em arco.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Cables-cable-pullover-side.gif' },
+      { id: 'b_crucifixo_inverso', nome: 'Crucifixo Inverso no Peck Deck', musculos: 'Deltoide posterior, romboides', descricao: 'Abra os braços controlando o retorno para manter tensão.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-rear-delt-fly-side.gif' },
+      { id: 'b_rosca_scott', nome: 'Rosca Scott (Preacher Curl)', musculos: 'Bíceps', descricao: 'Evite tirar o braço do apoio e desça devagar.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-preacher-curl-side.gif' },
+      { id: 'b_bayesian_curl', nome: 'Bíceps no Cabo (Bayesian Curl)', musculos: 'Bíceps (ênfase em alongamento)', descricao: 'Mantenha o ombro para trás e suba sem compensar.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Cables-bayesian-curl-side.gif' },
+      { id: 'c_hack_squat', nome: 'Hack Squat ou Agachamento Smith', musculos: 'Quadríceps, glúteos', descricao: 'Controle a descida e mantenha joelhos alinhados.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-hack-squat-side.gif' },
+      { id: 'c_extensora', nome: 'Cadeira Extensora', musculos: 'Quadríceps', descricao: 'Suba firme e segure 1s no topo antes de descer.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-leg-extension-side.gif' },
+      { id: 'c_rdl', nome: 'Stiff (RDL) com Halteres ou Barra', musculos: 'Posterior de coxa, glúteos', descricao: 'Quadril para trás e coluna neutra durante toda a execução.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Barbell-romanian-deadlift-side.gif' },
+      { id: 'c_flexora_sentada', nome: 'Flexora Sentada', musculos: 'Posterior de coxa', descricao: 'Puxe os calcanhares com controle e retorne devagar.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-seated-leg-curl-side.gif' },
+      { id: 'c_panturrilha_pe', nome: 'Elevação de Panturrilha em Pé', musculos: 'Panturrilhas', descricao: 'Amplitude completa com pausa no alongamento inferior.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Machine-standing-calf-raise-side.gif' },
+      { id: 'c_cable_crunch', nome: 'Cable Crunch (Abdominal Polia)', musculos: 'Reto abdominal', descricao: 'Enrole a coluna contraindo o abdômen a cada repetição.', media: 'https://media.musclewiki.com/media/uploads/videos/branded/male-Cables-cable-crunch-side.gif' }
     ];
 
     const ACTIVE_REST_TIPS = [
@@ -1142,7 +1135,7 @@
     let libraryFilterText = '';
     let favoritesOnly = false;
 
-    const DAY_SEQUENCE = ['A', 'B', 'C', 'D'];
+    const DAY_SEQUENCE = ['A', 'B', 'C'];
 
     const today = new Date();
     let calendarYear = today.getFullYear();
@@ -1206,9 +1199,9 @@
     function loadCustomExercises() {
       try {
         const raw = localStorage.getItem(CUSTOM_EXERCISES_KEY);
-        if (!raw) return { A: [], B: [], C: [], D: [] };
+        if (!raw) return { A: [], B: [], C: [] };
         const parsed = JSON.parse(raw);
-        const base = { A: [], B: [], C: [], D: [] };
+        const base = { A: [], B: [], C: [] };
         Object.keys(base).forEach((day) => {
           const list = Array.isArray(parsed?.[day]) ? parsed[day] : [];
           base[day] = list
@@ -1225,7 +1218,7 @@
         });
         return base;
       } catch {
-        return { A: [], B: [], C: [], D: [] };
+        return { A: [], B: [], C: [] };
       }
     }
 
